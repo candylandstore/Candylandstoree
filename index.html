@@ -934,7 +934,7 @@
                     itemLabel = `(${item.description})`;
                 }
 
-                message += `* ${item.name} ${itemLabel} - الكمية: ${item.quantity} | الإجمالي: ${parseFloat(totalItemPrice.toFixed(2))} ر.ي\n`;
+                message += `* ${item.name} ${itemLabel} - الكمية: ${item.quantity} | الإجمالي: ${parseFloat(totalItemPrice.toFixed(2))} ر.س\n`;
             });
             
             // 2. Totals
@@ -942,7 +942,7 @@
             if (totalWeight > 0) {
                 message += `الوزن الإجمالي (للحلوى): ${totalWeight} جرام\n`;
             }
-            message += `السعر الإجمالي المطلوب دفعه: ${parseFloat(totalPrice.toFixed(2))} ر.ي\n`;
+            message += `السعر الإجمالي المطلوب دفعه: ${parseFloat(totalPrice.toFixed(2))} ر.س\n`;
             
             // 3. Customer & Delivery Info
             message += "\n*--- تفاصيل العميل ---*\n";
