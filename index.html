@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy Land | متجر الحلوى</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons for standard icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Load Google Font for playful/candy text -->
+    <link href="https://fonts.googleapis.com/css2?family=Rubik+Puddles&display=swap" rel="stylesheet">
+    <!-- Load Fredoka font for product names -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Load Cookie font for handwritten titles (Fallback) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cookie&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom Candy/Pink Theme Colors */
+        :root {
+            --candy-pink: #FF69B4;
+            --candy-light: #FCE4EC;
+            --candy-red: #E91E63;
+            --sour-green: #A5D6A7;
+            --sweet-sour-orange: #FFB74D;
+        }
+
+        /* Set default font to Inter for better readability */
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Utility classes for custom icons and backgrounds */
+        .candy-bg { background-color: var(--candy-light); }
+        .candy-text { color: var(--candy-red); }
+        
+        /* Currency icon size consistent with price numbers */
+        .currency-icon { 
+            width: 1em; 
+            height: 1em; 
+            margin-right: 0.1rem; 
+            margin-left: 0; 
+            display: inline-block; 
+            vertical-align: -0.1em; /* Fine-tune vertical alignment */
+        }
+        .shadow-candy { box-shadow: 0 4px 6px -1px rgba(255, 105, 180, 0.3), 0 2px 4px -2px rgba(255, 105, 180, 0.2); }
+        
+        /* Style for Mixer Banner Text (Using Rubik Puddles for playful font) */
+        .decorative-text { 
+            font-family: 'Rubik Puddles', 'Comic Sans MS', cursive; 
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
+            color: #fff;
+        }
+
+        /* CHANGED: Use Rubik Puddles for section headers and page titles */
+        .font-handwriting { 
+            font-family: 'Rubik Puddles', 'Cookie', cursive; /* Rubik Puddles is new primary */
+            color: var(--candy-red);
+            text-shadow: 1px 1px 2px rgba(255, 105, 180, 0.3);
+            line-height: 1.2; /* Adjust line height for script font */
+        }
+        
+        /* Custom Cart Button Styling */
+        .cart-button-circle {
+            background-color: var(--candy-pink);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 9999px; /* Full circle */
+            display: flex;
+            align-items: center;
+            transition: background-color 0.3s;
+        }
+        .cart-button-circle:hover {
+            background-color: var(--candy-red);
+        }
+
+        /* Sidebar slide effect */
+        .sidebar { transition: transform 0.3s ease-in-out; transform: translateX(100%); }
+        .sidebar-open { transform: translateX(0); }
+
+        /* Modal backdrop (only used for Checkout/Alert now) */
+        .modal-backdrop { z-index: 40; display: none; background-color: rgba(0, 0, 0, 0.5); }
+        .modal-open { display: block; }
+        
+        /* Custom scrollbar for better candy aesthetic */
+        .candy-scroll::-webkit-scrollbar { width: 8px; }
+        .candy-scroll::-webkit-scrollbar-thumb { background-color: var(--candy-pink); border-radius: 10px; }
+        .candy-scroll::-webkit-scrollbar-track { background: var(--candy-light); }
+        
+        /* NEW: Toast Notification styles */
+        .toast {
+            transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-150%);
+            opacity: 0;
+            z-index: 100;
+            display: none; /* Initially hidden */
+        }
+        .toast-show {
+            display: flex;
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        /* NEW: Style for toggle icon */
+        .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-pink-50 min-h-screen text-right" dir="rtl">
+
+    <!-- Tailwind Config for Inter Font -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        handwriting: ['Rubik Puddles', 'Cookie', 'cursive'], // CHANGED
+                    },
+                    colors: {
+                        'candy-pink': '#FF69B4',
+                        'candy-light': '#FCE4EC',
+                        'candy-red': '#E91E63',
+                        'sour-green': '#A5D6A7',
+                        'sweet-sour-orange': '#FFB74D',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Sidebar Menu (Overlay) -->
+    <div id="sidebar" class="sidebar fixed top-0 right-0 h-full w-64 bg-white shadow-2xl z-50 p-6 border-l-4 border-candy-pink">
+        <button onclick="toggleSidebar()" class="absolute top-4 left-4 p-2 text-gray-500 hover:text-candy-red rounded-full bg-pink-100">
+            <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+        <h2 class="text-2xl font-bold mb-6 candy-text border-b pb-2 border-pink-100">قائمة المتجر</h2>
+        
+        <nav class="space-y-4 text-lg">
+            <a href="#" onclick="showPage('home'); toggleSidebar()" class="block text-gray-700 hover:text-candy-pink font-semibold">الصفحة الرئيسية</a>
+            <a href="#turkish-section" onclick="showPage('home'); toggleSidebar()" class="block text-gray-700 hover:text-candy-pink font-semibold">تشكيلة الحلوى التركية</a>
+            <a href="#spanish-section" onclick="showPage('home'); toggleSidebar()" class="block text-gray-700 hover:text-candy-pink font-semibold">تشكيلة الحلوى الأسبانية</a>
+            <a href="#boxes-section" onclick="showPage('home'); toggleSidebar()" class="block text-gray-700 hover:text-candy-pink font-semibold">بوكساتنا المشكلة</a>
+            <a href="#sauces-section" onclick="showPage('home'); toggleSidebar()" class="block text-gray-700 hover:text-candy-pink font-semibold">صوصاتنا الحامضة</a>
+            <a href="#features-section" onclick="showPage('home'); toggleSidebar()" class="block text-gray-700 hover:text-candy-pink font-semibold">لماذا كاندي لاند ؟</a>
+            <a href="#" onclick="toggleSidebar(); showToast('صفحة حولنا (قيد الإنشاء)');" class="block text-gray-700 hover:text-candy-pink font-semibold">حولنا</a>
+        </nav>
+
+        <div class="mt-8 pt-4 border-t border-pink-100">
+            <h3 class="font-bold mb-3 text-gray-600">تابعنا</h3>
+            <!-- CHANGED: Re-added target="_blank" for production -->
+            <div class="flex space-x-4 space-x-reverse">
+                <a href="https://instagram.com/candylandstoree" target="_blank" class="p-2 bg-gradient-to-tr from-pink-500 to-red-400 rounded-full shadow-lg hover:shadow-xl transition duration-300">
+                    <i data-lucide="instagram" class="w-5 h-5 text-white"></i>
+                </a>
+                <a href="https://facebook.com/candylandstoree" target="_blank" class="p-2 bg-blue-600 rounded-full shadow-lg hover:shadow-xl transition duration-300">
+                    <i data-lucide="facebook" class="w-5 h-5 text-white"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- CHANGED: Re-added target="_blank" for production -->
+        <div class="mt-6 pt-4 border-t border-pink-100">
+            <a href="https://wa.me/00967782933396" target="_blank" class="flex items-center space-x-2 space-x-reverse text-green-600 hover:text-green-700 font-semibold text-lg">
+                <!-- Icon removed -->
+                <span>واتساب</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content Wrapper -->
+    <div id="main-content" class="relative">
+
+        <!-- Header/Navbar (Sticky on top of all pages) -->
+        <header class="sticky top-0 bg-white shadow-candy p-4 z-30">
+            <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <!-- Menu Button -->
+                <button onclick="toggleSidebar()" class="p-2 rounded-full bg-pink-100 text-candy-red hover:bg-pink-200 transition">
+                    <img src="https://i.imgur.com/b8hX3KH.png" alt="Menu Icon" class="w-6 h-6" />
+                </button>
+                
+                <!-- Logo / Title based on current page -->
+                <!-- CHANGED: Logo is always visible, title is always hidden -->
+                <div class="flex-grow text-center">
+                    <img id="header-logo" src="https://i.imgur.com/q0r3Otr.png" alt="Candy Land Logo" class="h-20 inline-block transition duration-300" />
+                    <h1 id="header-title" class="hidden text-4xl font-handwriting">
+                        <span id="header-title-text"></span>
+                    </h1>
+                </div>
+                
+                <!-- Cart Button -->
+                <button onclick="showPage('cart')" class="relative cart-button-circle shadow-lg">
+                    <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                    <!-- Count Badge -->
+                    <span id="cart-count" class="absolute top-0 right-0 transform translate-x-1/4 -translate-y-1/4 h-5 w-5 flex items-center justify-center text-xs font-bold text-candy-pink bg-white rounded-full transition duration-300">0</span>
+                    
+                    <!-- Total Display -->
+                    <span class="mr-2 text-sm font-bold flex items-center">
+                        <span id="cart-total-display">0</span>
+                        <img src="https://i.imgur.com/rIdius4.png" alt="ر.ي" class="currency-icon w-5 h-5" />
+                    </span>
+                </button>
+            </div>
+        </header>
+
+        <!-- 1. Home Page Content -->
+        <div id="home-page" class="page">
+            <!-- Promotion Banner (The Mixer Button) -->
+            <section class="p-4 max-w-7xl mx-auto my-6">
+                <button onclick="showPage('mixer')" class="w-full h-28 rounded-xl overflow-hidden shadow-candy relative group">
+                    <img src="https://i.imgur.com/UyhUPFK.png" alt="Promotion Background" class="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition duration-500" />
+                    <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-40 transition duration-300 rounded-xl">
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-shadow-lg p-2 text-center font-handwriting" style="color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.7);">
+                            اختر مزيجك المميز حسب ذوقك
+                        </h2>
+                    </div>
+                </button>
+            </section>
+
+            <!-- Product Sections -->
+            <main class="max-w-7xl mx-auto p-4 space-y-10">
+                
+                <!-- Turkish Section -->
+                <section id="turkish-section">
+                    <!-- CHANGED: Reverted header, removed toggle button -->
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-handwriting pb-2 border-b-4 border-candy-pink inline-block">
+                            تشكيلة الحلوى التركية
+                        </h2>
+                    </div>
+                    <div id="turkish-products" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <!-- Products will be injected here -->
+                    </div>
+                    <!-- CHANGED: Re-added bottom show more button -->
+                    <div id="turkish-show-more-btn" class="text-center mt-6">
+                        <button onclick="showMore('turkish')" class="bg-candy-pink text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-candy-red transition duration-300 flex items-center justify-center mx-auto">
+                            عرض المزيد
+                            <i data-lucide="chevron-down" class="w-5 h-5 mr-2"></i>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Spanish Section -->
+                <section id="spanish-section">
+                    <!-- CHANGED: Reverted header, removed toggle button -->
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-handwriting pb-2 border-b-4 border-candy-pink inline-block">
+                            تشكيلة الحلوى الأسبانية
+                        </h2>
+                    </div>
+                    <div id="spanish-products" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <!-- Products will be injected here -->
+                    </div>
+                    <!-- CHANGED: Re-added bottom show more button -->
+                    <div id="spanish-show-more-btn" class="text-center mt-6">
+                        <button onclick="showMore('spanish')" class="bg-candy-pink text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-candy-red transition duration-300 flex items-center justify-center mx-auto">
+                            عرض المزيد
+                            <i data-lucide="chevron-down" class="w-5 h-5 mr-2"></i>
+                        </button>
+                    </div>
+                </section>
+                
+                <!-- NEW: Boxes Section -->
+                <section id="boxes-section">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-handwriting pb-2 border-b-4 border-candy-pink inline-block">
+                            بوكساتنا المشكلة
+                        </h2>
+                    </div>
+                    <div id="boxes-products" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <!-- Products will be injected here -->
+                    </div>
+                    <div id="boxes-show-more-btn" class="text-center mt-6">
+                        <button onclick="showMore('boxes')" class="bg-candy-pink text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-candy-red transition duration-300 flex items-center justify-center mx-auto">
+                            عرض المزيد
+                            <i data-lucide="chevron-down" class="w-5 h-5 mr-2"></i>
+                        </button>
+                    </div>
+                </section>
+                
+                <!-- NEW: Sauces Section -->
+                <section id="sauces-section">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-handwriting pb-2 border-b-4 border-candy-pink inline-block">
+                            صوصاتنا الحامضة للتغميس
+                        </h2>
+                    </div>
+                    <div id="sauces-products" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <!-- Products will be injected here -->
+                    </div>
+                    <div id="sauces-show-more-btn" class="text-center mt-6">
+                        <button onclick="showMore('sauces')" class="bg-candy-pink text-white px-6 py-2 rounded-full font-bold shadow-lg hover:bg-candy-red transition duration-300 flex items-center justify-center mx-auto">
+                            عرض المزيد
+                            <i data-lucide="chevron-down" class="w-5 h-5 mr-2"></i>
+                        </button>
+                    </div>
+                </section>
+
+            </main>
+            
+            <!-- NEW: Added slogan text -->
+            <section class="max-w-7xl mx-auto p-4 my-10">
+                <h2 class="text-4xl font-handwriting text-center text-candy-red">
+                    مع كاندي لاند.. الفرحة في الميعاد
+                </h2>
+            </section>
+            
+            <!-- Features Section -->
+            <section id="features-section" class="max-w-7xl mx-auto p-4 my-10">
+                <h2 class="text-3xl font-extrabold text-gray-800 text-center mb-8">لماذا كاندي لاند ؟</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-candy text-center border-t-4 border-candy-pink">
+                        <i data-lucide="dollar-sign" class="w-10 h-10 mx-auto mb-4 text-candy-red"></i>
+                        <h3 class="text-xl font-bold mb-2">أسعار تنافسية</h3>
+                        <p class="text-gray-600">نوفر لك خيارات شراء مرنة بأسعار تنافسية حسب الوزن أو عبر خيارات التشكيل.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-candy text-center border-t-4 border-candy-pink">
+                        <i data-lucide="candy" class="w-10 h-10 mx-auto mb-4 text-candy-red"></i>
+                        <h3 class="text-xl font-bold mb-2">تشكيلة لا تقاوم</h3>
+                        <p class="text-gray-600">اكتشف عالمًا من النكهات، من الحلو الكلاسيكي إلى الحامض المنعش.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-candy text-center border-t-4 border-candy-pink">
+                        <i data-lucide="medal" class="w-10 h-10 mx-auto mb-4 text-candy-red"></i>
+                        <h3 class="text-xl font-bold mb-2">جودة نضمنها</h3>
+                        <p class="text-gray-600">نختار أفضل المنتجات لنقدم لك تجربة لا تُنسى في كل قطعة.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 2. Cart Full Page Content (Initially Hidden) -->
+        <div id="cart-page" class="page hidden p-4 max-w-7xl mx-auto">
+            <div class="bg-white rounded-xl shadow-2xl w-full mx-auto p-6 md:p-8 transform transition-all duration-300 relative mt-4">
+                
+                <div class="relative flex items-center justify-between mb-6 border-b pb-2">
+                    <button onclick="showPage('home')" class="p-2 text-gray-500 hover:text-candy-red">
+                        <i data-lucide="arrow-right" class="w-6 h-6"></i>
+                    </button>
+                    <!-- CHANGED: Font size (text-3xl) -->
+                    <h3 class="text-3xl font-handwriting text-center absolute left-1/2 -translate-x-1/2">
+                        سلة المشتريات
+                    </h3>
+                    <div class="w-10"></div> <!-- Spacer -->
+                </div>
+                
+                <div id="cart-items-container" class="max-h-[60vh] overflow-y-auto candy-scroll space-y-4 mb-6 md:px-4">
+                    <!-- Cart items will be rendered here -->
+                    <p id="empty-cart-message" class="text-center text-gray-500">سلة المشتريات فارغة.</p>
+                </div>
+
+                <form id="cart-checkout-form" class="space-y-4 my-6">
+                    <h4 class="text-xl font-bold text-gray-800 border-b pb-2">تفاصيل الطلب</h4>
+                    <div>
+                        <label for="cart-recipient-name" class="block text-sm font-medium text-gray-700">اسم المستلم</label>
+                        <input type="text" id="cart-recipient-name" class="mt-1 block w-full border border-pink-200 rounded-lg p-3 focus:ring-candy-pink focus:border-candy-pink transition" required>
+                    </div>
+                    <div>
+                        <label for="cart-phone-number" class="block text-sm font-medium text-gray-700">رقم الهاتف</label>
+                        <input type="tel" id="cart-phone-number" class="mt-1 block w-full border border-pink-200 rounded-lg p-3 focus:ring-candy-pink focus:border-candy-pink transition" required>
+                    </div>
+                    <div>
+                        <label for="cart-payment-method" class="block text-sm font-medium text-gray-700">اختر طريقة الدفع</label>
+                        <select id="cart-payment-method" onchange="checkOtherOption('cart-payment-method', 'cart-payment-other-field')" class="mt-1 block w-full border border-pink-200 rounded-lg p-3 bg-white focus:ring-candy-pink focus:border-candy-pink transition" required>
+                            <option value="" disabled selected>اختر طريقة الدفع</option>
+                            <option value="ايداع عمقي">ايداع عمقي</option>
+                            <option value="ايداع كريمي">ايداع كريمي</option>
+                            <option value="دفع عند التسليم">دفع عند التسليم</option>
+                            <option value="Other">آخر</option>
+                        </select>
+                        <input type="text" id="cart-payment-other-field" class="mt-2 hidden block w-full border border-pink-200 rounded-lg p-3 focus:ring-candy-pink focus:border-candy-pink transition" placeholder="يرجى كتابة الطريقة">
+                    </div>
+                    <div>
+                        <label for="cart-delivery-zone" class="block text-sm font-medium text-gray-700">التوصيل الى</label>
+                        <select id="cart-delivery-zone" onchange="checkOtherOption('cart-delivery-zone', 'cart-delivery-other-field')" class="mt-1 block w-full border border-pink-200 rounded-lg p-3 bg-white focus:ring-candy-pink focus:border-candy-pink transition" required>
+                            <option value="" disabled selected>اختر منطقة التوصيل</option>
+                            <option value="القطن">القطن</option>
+                            <option value="شبام">شبام</option>
+                            <option value="سيؤن">سيؤن</option>
+                            <option value="الحوطه">الحوطه</option>
+                            <option value="خشامر">خشامر</option>
+                            <option value="العقاد وضواحيها">العقاد وضواحيها</option>
+                            <option value="Other">آخر</option>
+                        </select>
+                        <input type="text" id="cart-delivery-other-field" class="mt-2 hidden block w-full border border-pink-200 rounded-lg p-3 focus:ring-candy-pink focus:border-candy-pink transition" placeholder="يرجى كتابة مكان التوصيل">
+                    </div>
+                </form>
+                
+                <div class="mt-6 pt-4 border-t border-pink-100">
+                    <div class="bg-pink-50 p-4 rounded-lg mb-6">
+                        <div class="flex justify-between items-center text-lg font-bold mb-2">
+                            <span>الإجمالي (وزن):</span>
+                            <span id="cart-total-weight">0 جرام</span>
+                        </div>
+                        <div class="flex justify-between items-center text-2xl font-extrabold candy-text">
+                            <span>الإجمالي (سعر):</span>
+                            <span class="flex items-center">
+                                <span id="cart-total-price">0</span>
+                                <!-- CHANGED: Removed mr-1 -->
+                                <img src="https://i.imgur.com/rIdius4.png" alt="ر.ي" class="currency-icon w-7 h-7" />
+                            </span>
+                        </div>
+                    </div>
+
+                    <p id="cart-whatsapp-error-message" class="text-red-500 text-center mb-3 hidden">يرجى ملء جميع الحقول المطلوبة.</p>
+
+                    <div class="flex flex-col space-y-3">
+                        <!-- CHANGED: Button text updated -->
+                        <button id="checkout-button" type="submit" form="cart-checkout-form" class="w-full bg-green-500 text-white py-3 rounded-full font-bold text-lg shadow-lg shadow-green-300 hover:bg-green-600 transition duration-300 disabled:opacity-50 flex items-center justify-center space-x-2 space-x-reverse" disabled>
+                            <i data-lucide="send" class="w-5 h-5"></i>
+                            <span>إرسال الطلب عبر واتساب</span>
+                        </button>
+                        <button onclick="showPage('home')" class="w-full bg-gray-200 text-gray-700 py-3 rounded-full font-bold text-lg hover:bg-gray-300 transition duration-300 flex items-center justify-center">
+                            <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>
+                            متابعة التسوق
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Mixer Full Page Content (New Dedicated Page) -->
+        <div id="mixer-page" class="page hidden p-4 max-w-7xl mx-auto">
+            <div class="bg-white rounded-xl shadow-2xl w-full mx-auto p-6 md:p-8 transform transition-all duration-300 relative mt-4">
+                
+                <button onclick="showPage('home')" class="absolute top-4 right-4 p-2 text-gray-500 hover:text-candy-red">
+                    <i data-lucide="arrow-right" class="w-6 h-6"></i>
+                </button>
+                
+                <!-- CHANGED: Font size (text-3xl), price (3.75) -->
+                <h3 class="text-3xl font-handwriting mb-2 text-center">اصنع مزيجك الخاص</h3>
+                <!-- CHANGED: Styled numbers to be bolder -->
+                <p class="text-lg text-gray-600 mb-4 text-center">
+                    (<span class="font-bold text-gray-800">33</span> جرام / <span class="font-bold text-gray-800">3.75</span> 
+                    <!-- CHANGED: Removed mr-1 -->
+                    <img src="https://i.imgur.com/rIdius4.png" alt="ر.ي" class="currency-icon w-4 h-4" />)
+                </p>
+                
+                <div id="mixer-products-container" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 max-h-[70vh] overflow-y-auto candy-scroll p-2">
+                    <!-- Mixer products will be rendered here by renderMixerProducts() -->
+                </div>
+                
+                <div class="mt-8 text-center border-t pt-4">
+                    <button onclick="showPage('home')" class="bg-candy-pink text-white py-3 px-8 rounded-full font-bold shadow-lg hover:bg-candy-red transition duration-300 text-lg flex items-center justify-center mx-auto">
+                        <i data-lucide="arrow-right" class="w-5 h-5 ml-2"></i>
+                        متابعة التسوق
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer (Always visible) -->
+        <footer class="bg-candy-red text-white p-6 mt-10">
+            <div class="max-w-7xl mx-auto text-center">
+                <p class="text-sm">متجر Candy Land لجميع أنواع الحلويات. © 2025 All Rights Reserved by Ali Jaber.</p>
+            </div>
+        </footer>
+
+    </div>
+    
+    <!-- NEW: Toast Notification -->
+    <div id="toast-notification" class="toast bg-green-500 text-white py-2 px-5 rounded-full shadow-lg flex items-center space-x-2 space-x-reverse">
+        <i data-lucide="check-circle" class="w-5 h-5"></i>
+        <span id="toast-message"></span>
+    </div>
+
+
+    <script>
+        // NEW: Toast Notification Function
+        let toastTimeout;
+        function showToast(message) {
+            const toast = document.getElementById('toast-notification');
+            const toastMessage = document.getElementById('toast-message');
+            
+            if (!toast || !toastMessage) return;
+            
+            toastMessage.textContent = message;
+            toast.style.display = 'flex';
+            
+            if (toastTimeout) {
+                clearTimeout(toastTimeout);
+            }
+            
+            setTimeout(() => {
+                toast.classList.add('toast-show');
+            }, 10);
+
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('toast-show');
+                setTimeout(() => {
+                    toast.style.display = 'none';
+                }, 300);
+            }, 3000);
+        }
+
+        // Initialize Lucide icons
+        window.onload = () => {
+            lucide.createIcons();
+            renderProducts();
+            updateCartUI();
+            // Start on home page
+            showPage('home');
+        };
+
+        // CHANGED: Added new Box and Sauce items with updated descriptions/images
+        const CANDY_DATA = [
+            // Turkish Candies (11 R.S./100g)
+            { id: 1, name: "جيلي قلوب حمراء", origin: "turkish", taste: "حلو حامض", basePricePer100g: 11, image: "https://i.imgur.com/XaKdkeT.png" },
+            { id: 2, name: "فراوله شكل شفايف", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/0rSHBe2.jpeg" },
+            { id: 3, name: "شرائط الفواكة", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/Q2VW5QX.jpeg" },
+            { id: 4, name: "شرائط التفاح الأخضر", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/M7OCkP9.jpeg" },
+            { id: 5, name: "جيلي دببه بنكهات", origin: "turkish", taste: "حلو حامض", basePricePer100g: 11, image: "https://i.imgur.com/0nqYAz0.jpeg" },
+            { id: 6, name: "دونات الخوخ", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/OIqU6FZ.jpeg" },
+            { id: 7, name: "حلوى شكل الفول", origin: "turkish", taste: "حلو حامض", basePricePer100g: 11, image: "https://i.imgur.com/p625DAd.jpeg" },
+            { id: 8, name: "شرائط التوت الأزرق", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/xq96kUO.jpeg" },
+            { id: 9, name: "دونات ملون فواكه", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/xvUW6oG.png" },
+            { id: 10, name: "شرائح التفاح الأخضر", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/oIs7XWT.jpeg" },
+            { id: 11, name: "شرائط الرينبو الصغيره", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/k9YgIZ2.jpeg" },
+            { id: 12, name: "حلوى جيلي كرز", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/UBi4gh9.jpeg" },
+            { id: 13, name: "حلوى جيلي كولا", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/1vxw3KN.jpeg" },
+            { id: 14, name: "كاندي الفراوله", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/1SqxXOM.jpeg" },
+            { id: 15, name: "شرائط الكولا", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/IdQ5m85.jpeg" },
+            { id: 16, name: "شرائط التوت الأحمر", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/ZBZ8m30.jpeg" },
+            { id: 17, name: "شرائط الفراولة", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/hmFM29E.jpeg" },
+            { id: 18, name: "شرائح الكولا الصغيرة", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/8gdZm05.jpeg" },
+            { id: 19, name: "كاندي الدودة كولا", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/1TPOwoY.jpeg" },
+            { id: 20, name: "جيلي الدودة بالفواكة", origin: "turkish", taste: "حلو حامض", basePricePer100g: 11, image: "https://i.imgur.com/UHXuSxo.jpeg" },
+            { id: 21, name: "كاندي الدودة فواكة بالسكر", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/GVBEdNC.jpeg" },
+            { id: 22, name: "كاندي الدببة بالفواكة المسكرة", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/bSwnxGA.jpeg" },
+            { id: 23, name: "دونات الفراولة والتوت الأزرق", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/EJj06uw.jpeg" },
+            { id: 24, name: "كولا بالعلكة الحامضة", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/ueoNkfu.jpeg" },
+            { id: 25, name: "كاندي اسماك القرش بالفواكة", origin: "turkish", taste: "حلو حامض", basePricePer100g: 11, image: "https://i.imgur.com/7r96X9W.jpeg" },
+            { id: 26, name: "جيلي فراولة", origin: "turkish", taste: "حلو حامض", basePricePer100g: 11, image: "https://i.imgur.com/ZaLFM6n.jpeg" },
+            { id: 27, name: "كاندي جيلي توت", origin: "turkish", taste: "حلو حامض", basePricePer100g: 11, image: "https://i.imgur.com/ayEG9UM.jpeg" },
+            { id: 28, name: "كاندي التوت المسكر", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/z7fnYmi.jpeg" },
+            { id: 29, name: "كاندي دونات الفراولة", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/mxuJbey.jpeg" },
+            { id: 30, name: "كاندي جيلي الكولا", origin: "turkish", taste: "حلو حامض", basePricePer100g: 11, image: "https://i.imgur.com/rONRJcP.jpeg" },
+            { id: 31, name: "كاندي كولا الكرز", origin: "turkish", taste: "حامض", basePricePer100g: 11, image: "https://i.imgur.com/pSsSbbX.jpeg" },
+            // Spanish Candies (13 R.S./100g)
+            { id: 32, name: "جيلي غيوم التوت الازرق", origin: "spanish", taste: "حامض", basePricePer100g: 13, image: "https://i.imgur.com/fv9apiE.jpeg" },
+            { id: 33, name: "حلوى الليمون الحامضه", origin: "spanish", taste: "حامض", basePricePer100g: 13, image: "https://i.imgur.com/unJ9bIB.jpeg" },
+            { id: 34, name: "حلوى الدوده الملونه", origin: "spanish", taste: "حامض", basePricePer100g: 13, image: "https://i.imgur.com/p8OxdAi.jpeg" },
+            { id: 35, name: "حلوى شكل البيض", origin: "spanish", taste: "حلو حامض", basePricePer100g: 13, image: "https://i.imgur.com/rO6I2UW.jpeg" },
+            { id: 36, name: "المكعبات الملونه", origin: "spanish", taste: "حامض", basePricePer100g: 13, image: "https://i.imgur.com/UmKHhxM.jpeg" },
+            { id: 37, name: "كاندي التوت", origin: "spanish", taste: "حامض", basePricePer100g: 13, image: "https://i.imgur.com/xieLMRz.jpeg" },
+            { id: 38, name: "قلوب التوت الأزرق", origin: "spanish", taste: "حامض", basePricePer100g: 13, image: "https://i.imgur.com/VE2ZCJR.jpeg" },
+            { id: 39, name: "شرائح البطيخ بالتوت الأزرق", origin: "spanish", taste: "حامض", basePricePer100g: 13, image: "https://i.imgur.com/kUUe1Nr.jpeg" },
+            { id: 40, name: "كاندي عيدان الكولا", origin: "spanish", taste: "حامض", basePricePer100g: 13, image: "https://i.imgur.com/MklX3nz.jpeg" },
+            { id: 41, name: "كاندي البطيخ", origin: "spanish", taste: "حامض", basePricePer100g: 13, image: "https://i.imgur.com/68LnV0Z.jpeg" },
+            { id: 42, name: "كاندي الكرز الحامضة", origin: "spanish", taste: "حامض", basePricePer100g: 13, image: "https://i.imgur.com/ay1XFiW.jpeg" },
+            
+            // NEW: Boxes (Descriptions Updated)
+            { id: 43, name: "توزيعات 30 جرام", origin: "boxes", taste: "متنوع", basePricePer100g: 4, image: "https://i.imgur.com/sPyO3bn.jpeg", description: "تقدر تختار تشكيلتك التركية" },
+            { id: 44, name: "بوكس 50 جرام", origin: "boxes", taste: "متنوع", basePricePer100g: 6, image: "https://i.imgur.com/PBBUQvf.jpeg", description: "تقدر تختار تشكيلتك التركية" },
+            { id: 45, name: "بوكس 100 جرام", origin: "boxes", taste: "متنوع", basePricePer100g: 11, image: "https://i.imgur.com/waaPEOp.jpeg", description: "تقدر تختار تشكيلتك التركية" },
+            { id: 46, name: "بوكس 150 جرام", origin: "boxes", taste: "متنوع", basePricePer100g: 16, image: "https://i.imgur.com/waaPEOp.jpeg", description: "تقدر تختار تشكيلتك التركية" },
+            { id: 47, name: "بوكس 250 جرام", origin: "boxes", taste: "متنوع", basePricePer100g: 29, image: "https://i.imgur.com/nit7i4l.jpeg", description: "تقدر تختار تشكيلتك التركية" },
+            { id: 48, name: "بوكس 350 جرام", origin: "boxes", taste: "متنوع", basePricePer100g: 38, image: "https://i.imgur.com/nit7i4l.jpeg", description: "تقدر تختار الي يحبه قلبك" },
+            { id: 49, name: "بوكس 500 جرام", origin: "boxes", taste: "متنوع", basePricePer100g: 50, image: "https://i.imgur.com/3zStqio.jpeg", description: "تقدر تختار الي يحبه قلبك" },
+            { id: 50, name: "بوكس 750 جرام", origin: "boxes", taste: "متنوع", basePricePer100g: 73, image: "https://i.imgur.com/Q5eZKnU.jpeg", description: "تقدر تختار الي يحبه قلبك" },
+            { id: 51, name: "بوكس 1000 جرام", origin: "boxes", taste: "متنوع", basePricePer100g: 94, image: "https://i.imgur.com/Q5eZKnU.jpeg", description: "تقدر تختار الي يحبه قلبك" },
+            
+            // NEW: Sauces (Images Updated)
+            { id: 52, name: "صوص توت ازرق", origin: "sauces", taste: "حامض", basePricePer100g: 1, image: "https://i.imgur.com/6hyeK0Q.png", description: "علبة صغيرة" },
+            { id: 53, name: "صوص فراوله", origin: "sauces", taste: "حامض", basePricePer100g: 1, image: "https://i.imgur.com/YoEROQG.jpeg", description: "علبة صغيرة" },
+            { id: 54, name: "صوص تفاح اخضر", origin: "sauces", taste: "حامض", basePricePer100g: 1, image: "https://i.imgur.com/j7CPmUw.png", description: "علبة صغيرة" },
+            { id: 55, name: "صوص كيوي", origin: "sauces", taste: "حامض", basePricePer100g: 1, image: "https://i.imgur.com/TyuyGWJ.jpeg", description: "علبة صغيرة" },
+            { id: 56, name: "صوص خوخ", origin: "sauces", taste: "حامض", basePricePer100g: 1, image: "https://i.imgur.com/TwIozRA.jpeg", description: "علبة صغيرة" },
+            { id: 57, name: "صوص كرز", origin: "sauces", taste: "حامض", basePricePer100g: 1, image: "https://i.imgur.com/6xNn2SY.jpeg", description: "علبة صغيرة" },
+            { id: 58, name: "صوص برتقال", origin: "sauces", taste: "حامض", basePricePer100g: 1, image: "https://i.imgur.com/ah0b1gB.jpeg", description: "علبة صغيرة" },
+        ];
+
+
+        let cart = JSON.parse(localStorage.getItem('candyLandCart')) || {};
+        // CHANGED: Added new sections, set sauces to 2
+        let displayedCount = { turkish: 6, spanish: 6, boxes: 2, sauces: 2 };
+
+        // --- Core UI Functions ---
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('sidebar-open');
+        }
+
+        // Function to switch between main pages (Home, Cart, Mixer)
+        function showPage(pageId) {
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => page.classList.add('hidden'));
+
+            const targetPage = document.getElementById(`${pageId}-page`);
+            if (targetPage) {
+                targetPage.classList.remove('hidden');
+            }
+            
+            // CHANGED: Always show logo, always hide title
+            const logo = document.getElementById('header-logo');
+            const titleContainer = document.getElementById('header-title');
+            
+            logo.classList.remove('hidden');
+            titleContainer.classList.add('hidden');
+                
+            // Still need to update cart/mixer when shown
+            if (pageId === 'cart') {
+                updateCartModal(); 
+            } else if (pageId === 'mixer') {
+                renderMixerProducts();
+            }
+            
+            lucide.createIcons();
+        }
+        
+        // --- Product Rendering & Logic ---
+
+        function getTasteClasses(taste) {
+            switch (taste) {
+                case "حامض":
+                    return "bg-sour-green text-gray-800";
+                case "حلو حامض":
+                    return "bg-sweet-sour-orange text-gray-800";
+                case "حلو":
+                    return "bg-candy-red text-white";
+                default:
+                    return "bg-gray-200 text-gray-800";
+            }
+        }
+
+        // CHANGED: Updated to handle unit items (boxes/sauces) and description
+        function createProductCard(product, weightGrams = 100) {
+            const isMixer = weightGrams === 33;
+            const isUnitItem = product.origin === 'boxes' || product.origin === 'sauces';
+            // CHANGED: (Step 2/5) Added conditional sizing
+            const isSmallCard = isUnitItem;
+
+            const price = isUnitItem ? product.basePricePer100g : (isMixer ? 3.75 : product.basePricePer100g);
+            const weight = isUnitItem ? 0 : weightGrams; // Weight is 0 for per-item products
+            const unit = isUnitItem ? '' : (isMixer ? ` (${weightGrams} جرام)` : ` (${weightGrams} جرام)`);
+            const descriptionHtml = product.description ? `<p class="text-xs text-blue-600 font-semibold mt-1">${product.description}</p>` : '';
+
+            // CHANGED: (Step 3) Added image to item object
+            const item = {
+                id: product.id,
+                name: product.name,
+                price: price,
+                weight: weight, // Will be 0 for boxes/sauces
+                unit: unit,
+                isMixer: isMixer,
+                description: product.description || null, // Pass description to cart item
+                image: product.image // Pass image to cart item
+            };
+            
+            // CHANGED: (Step 2/5) Conditional sizing
+            const nameSizeClass = isMixer ? 'text-sm font-bold' : (isSmallCard ? 'text-base font-bold' : 'text-lg font-bold');
+            const priceSizeClass = isMixer ? 'text-base font-semibold' : (isSmallCard ? 'text-base font-bold' : 'text-lg font-bold');
+            const imageSize = isSmallCard ? 'w-24 h-24' : 'w-32 h-32';
+            const nameHeight = isSmallCard ? 'min-h-[2.5rem]' : 'min-h-[3.5rem]';
+            
+            const buttonTextSizeClass = isMixer ? 'text-xs' : 'text-sm';
+            const buttonPaddingClass = isMixer ? 'py-1.5' : 'py-2';
+            
+            const tasteDisplay = product.taste;
+            // CHANGED: (Step 2/5) Conditional taste spacer
+            const tasteHtml = !isUnitItem ? `<span class="text-xs font-semibold py-0.5 px-2 rounded-full mt-1 ${getTasteClasses(tasteDisplay)}">${tasteDisplay}</span>` : '<span class="h-1"></span>'; // Small spacer for unit items
+
+            
+            return `
+                <div class="bg-white p-3 rounded-xl shadow-md flex flex-col items-center hover:shadow-lg transition duration-300 transform hover:scale-[1.02] border-t-4 border-candy-pink">
+                    <img src="${product.image}" alt="${product.name}" class="${imageSize} object-cover rounded-full mb-2 border-4 border-pink-100" onerror="this.onerror=null; this.src='https::placehold.co/100x100/FCE4EC/E91E63?text=🍬'; this.style.border='none';" />
+                    <h4 class="${nameSizeClass} ${nameHeight} font-fredoka text-gray-800 text-center w-full px-1 flex items-center justify-center">${product.name}</h4>
+                    ${descriptionHtml} <!-- NEW: Added description -->
+                    ${tasteHtml} <!-- NEW: Conditional taste/spacer -->
+                    
+                    <p class="${priceSizeClass} candy-text mt-3 mb-2 flex items-center">
+                        ${parseFloat(price.toFixed(2))} 
+                        <!-- CHANGED: (Step 4) Removed mr-1 -->
+                        <img src="https://i.imgur.com/rIdius4.png" alt="ر.ي" class="currency-icon w-5 h-5" />
+                        <span class="text-sm font-normal mr-1 text-gray-500 whitespace-nowrap">${unit}</span>
+                    </p>
+                    <button onclick='addToCart(${JSON.stringify(item)})' class="w-full bg-candy-pink text-white ${buttonPaddingClass} rounded-full font-bold ${buttonTextSizeClass} hover:bg-candy-red transition duration-300 flex items-center justify-center mt-auto">
+                        <i data-lucide="plus" class="w-5 h-5 ml-2"></i>
+                        أضف إلى السلة
+                    </button>
+                </div>
+            `;
+        }
+
+        // CHANGED: Updated loop, and logic for show more button
+        function renderProducts() {
+            ['turkish', 'spanish', 'boxes', 'sauces'].forEach(origin => {
+                const container = document.getElementById(`${origin}-products`);
+                if (!container) return; 
+                
+                const filteredProducts = CANDY_DATA.filter(p => p.origin === origin);
+                const productsToDisplay = filteredProducts.slice(0, displayedCount[origin]);
+                
+                container.innerHTML = productsToDisplay.map(p => createProductCard(p)).join('');
+                
+                // Logic to show/hide the "Show More" button
+                const showMoreBtn = document.getElementById(`${origin}-show-more-btn`);
+                if (showMoreBtn) {
+                    if (displayedCount[origin] >= filteredProducts.length) {
+                        showMoreBtn.style.display = 'none';
+                    } else {
+                        showMoreBtn.style.display = 'block';
+                    }
+                }
+                
+                lucide.createIcons();
+            });
+        }
+
+        function renderMixerProducts() {
+            const container = document.getElementById('mixer-products-container');
+            if (!container) return; 
+            
+            const turkishProducts = CANDY_DATA.filter(p => p.origin === 'turkish');
+            container.innerHTML = turkishProducts.map(p => createProductCard(p, 33)).join('');
+            lucide.createIcons();
+        }
+
+        // CHANGED: Reverted to expand-only logic
+        function showMore(origin) {
+            const allProductsCount = CANDY_DATA.filter(p => p.origin === origin).length;
+            
+            if (displayedCount[origin] < allProductsCount) {
+                // Expand to show all
+                displayedCount[origin] = allProductsCount;
+                renderProducts(); // This will re-render and hide the button
+            }
+        }
+
+
+        // --- Cart Logic ---
+
+        function generateCartKey(item) {
+            return `${item.id}-${item.isMixer ? 'mixer' : 'standard'}`;
+        }
+
+        function addToCart(item) {
+            const key = generateCartKey(item);
+            
+            if (cart[key]) {
+                cart[key].quantity += 1;
+            } else {
+                cart[key] = { ...item, quantity: 1 };
+            }
+
+            saveCart();
+            updateCartUI();
+            showToast(`تمت إضافة ${item.name}!`);
+        }
+
+        function updateQuantity(key, delta) {
+            if (cart[key]) {
+                cart[key].quantity += delta;
+                if (cart[key].quantity <= 0) {
+                    delete cart[key];
+                }
+            }
+            saveCart();
+            updateCartUI();
+            if (!document.getElementById('cart-page').classList.contains('hidden')) {
+                 updateCartModal(); 
+            }
+        }
+
+        function removeFromCart(key) {
+            delete cart[key];
+            saveCart();
+            updateCartUI();
+            if (!document.getElementById('cart-page').classList.contains('hidden')) {
+                 updateCartModal();
+            }
+        }
+
+        function saveCart() {
+            localStorage.setItem('candyLandCart', JSON.stringify(cart));
+        }
+        
+        function calculateCartTotals() {
+            let totalWeight = 0;
+            let totalPrice = 0;
+            let totalCount = 0;
+            
+            Object.values(cart).forEach(item => {
+                totalWeight += item.weight * item.quantity;
+                totalPrice += item.price * item.quantity;
+                totalCount += item.quantity;
+            });
+            
+            return { totalWeight, totalPrice, totalCount };
+        }
+
+        function updateCartUI() {
+            const { totalWeight, totalPrice, totalCount } = calculateCartTotals();
+            
+            document.getElementById('cart-count').textContent = totalCount;
+            document.getElementById('cart-total-display').textContent = parseFloat(totalPrice.toFixed(2));
+            
+            const checkoutButton = document.getElementById('checkout-button');
+            if (checkoutButton) {
+                checkoutButton.disabled = totalCount === 0;
+            }
+
+            if (!document.getElementById('cart-page').classList.contains('hidden')) {
+                 updateCartModal();
+            }
+        }
+
+        // CHANGED: (Step 3) Added <img> tag to cart item HTML
+        function updateCartModal() {
+            const container = document.getElementById('cart-items-container');
+            const { totalWeight, totalPrice } = calculateCartTotals();
+            
+            document.getElementById('cart-total-weight').textContent = `${totalWeight} جرام`;
+            document.getElementById('cart-total-price').textContent = parseFloat(totalPrice.toFixed(2));
+            
+            if (Object.keys(cart).length === 0) {
+                container.innerHTML = '<p id="empty-cart-message" class="text-center text-gray-500 p-4">سلة المشتريات فارغة.</p>';
+                return;
+            }
+
+            const emptyMessage = document.getElementById('empty-cart-message');
+            if (emptyMessage) emptyMessage.remove();
+
+            let cartHtml = '';
+            for (const key in cart) {
+                const item = cart[key];
+                const itemTotal = item.price * item.quantity;
+                
+                // New logic for item label
+                let itemLabel = '';
+                if (item.isMixer) {
+                    itemLabel = 'مزيج (33g)';
+                } else if (item.weight > 0) {
+                    itemLabel = `عبوة (${item.weight}g)`;
+                } else if (item.description) {
+                    itemLabel = `(${item.description})`;
+                }
+
+                cartHtml += `
+                    <div class="flex items-center justify-between p-3 bg-pink-50 rounded-lg border border-pink-100">
+                        <!-- (Step 3) Added Image -->
+                        <img src="${item.image}" alt="${item.name}" class="w-16 h-16 rounded-lg object-cover ml-3" onerror="this.onerror=null; this.src='https::placehold.co/100x100/FCE4EC/E91E63?text=🍬'; this.style.border='none';">
+
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-gray-800">${item.name}</p>
+                            <p class="text-sm text-gray-500">${item.weight * item.quantity > 0 ? (item.weight * item.quantity + ' جرام') : ''} | ${parseFloat(itemTotal.toFixed(2))}</p>
+                            <span class="text-xs text-candy-red font-semibold">${itemLabel}</span>
+                        </div>
+                        
+                        <div class="flex flex-col items-center justify-center space-y-1 ml-3">
+                            <button onclick="removeFromCart('${key}')" class="p-1 bg-red-100 rounded-full hover:bg-red-200 transition duration-150">
+                                <i data-lucide="trash-2" class="w-4 h-4 text-red-600"></i>
+                            </button>
+                            <div class="flex items-center">
+                                <button onclick="updateQuantity('${key}', 1)" class="p-1 bg-pink-200 text-candy-red rounded-full hover:bg-pink-300 transition duration-150">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                </button>
+                                <span class="mx-2 text-lg font-bold">${item.quantity}</span>
+                                <button onclick="updateQuantity('${key}', -1)" class="p-1 bg-pink-200 text-candy-red rounded-full hover:bg-pink-300 transition duration-150">
+                                    <i data-lucide="minus" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = cartHtml;
+            lucide.createIcons();
+        }
+
+
+        // --- Checkout & WhatsApp Logic ---
+
+        function checkOtherOption(selectId, inputId) {
+            const selectElement = document.getElementById(selectId);
+            const inputElement = document.getElementById(inputId);
+            
+            if (selectElement.value === 'Other') {
+                inputElement.classList.remove('hidden');
+                inputElement.required = true;
+            } else {
+                inputElement.classList.add('hidden');
+                inputElement.required = false;
+                inputElement.value = '';
+            }
+        }
+        
+        document.getElementById('cart-checkout-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('cart-recipient-name').value.trim();
+            const phone = document.getElementById('cart-phone-number').value.trim();
+            
+            let paymentMethodSelect = document.getElementById('cart-payment-method');
+            let paymentMethodInput = document.getElementById('cart-payment-other-field');
+            let paymentMethod = paymentMethodSelect.value === 'Other' ? paymentMethodInput.value.trim() : paymentMethodSelect.value;
+
+            let deliveryZoneSelect = document.getElementById('cart-delivery-zone');
+            let deliveryZoneInput = document.getElementById('cart-delivery-other-field');
+            let deliveryZone = deliveryZoneSelect.value === 'Other' ? deliveryZoneInput.value.trim() : deliveryZoneSelect.value;
+
+            const errorMessage = document.getElementById('cart-whatsapp-error-message');
+            
+            if (!name || !phone || paymentMethodSelect.value === "" || deliveryZoneSelect.value === "" || (paymentMethodSelect.value === 'Other' && !paymentMethod) || (deliveryZoneSelect.value === 'Other' && !deliveryZone)) {
+                errorMessage.classList.remove('hidden');
+                return;
+            } else {
+                errorMessage.classList.add('hidden');
+            }
+            
+            generateWhatsAppLink(name, phone, paymentMethod, deliveryZone);
+        });
+
+
+        // CHANGED: Reverted to window.open(..., '_blank') for production
+        function generateWhatsAppLink(name, phone, paymentMethod, deliveryZone) {
+            const { totalWeight, totalPrice } = calculateCartTotals();
+            
+            let message = "مرحباً متجر Candy Land! أود طلب الحلوى التالية:\n\n";
+            
+            // 1. Items List
+            Object.values(cart).forEach(item => {
+                const totalItemPrice = item.price * item.quantity;
+                
+                // New logic for item label
+                let itemLabel = '';
+                if (item.isMixer) {
+                    itemLabel = 'مزيج (33g)';
+                } else if (item.weight > 0) {
+                    itemLabel = `عبوة (${item.weight}g)`;
+                } else if (item.description) {
+                    itemLabel = `(${item.description})`;
+                }
+
+                message += `* ${item.name} ${itemLabel} - الكمية: ${item.quantity} | الإجمالي: ${parseFloat(totalItemPrice.toFixed(2))} ر.ي\n`;
+            });
+            
+            // 2. Totals
+            message += "\n*--- ملخص الطلب ---*\n";
+            if (totalWeight > 0) {
+                message += `الوزن الإجمالي (للحلوى): ${totalWeight} جرام\n`;
+            }
+            message += `السعر الإجمالي المطلوب دفعه: ${parseFloat(totalPrice.toFixed(2))} ر.ي\n`;
+            
+            // 3. Customer & Delivery Info
+            message += "\n*--- تفاصيل العميل ---*\n";
+            message += `اسم المستلم: ${name}\n`;
+            message += `رقم الهاتف: ${phone}\n`;
+            message += `طريقة الدفع: ${paymentMethod}\n`;
+            message += `منطقة التوصيل: ${deliveryZone}\n`;
+            
+            const whatsappNumber = '00967782933396';
+            const encodedMessage = encodeURIComponent(message);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+            
+            // CHANGED: Use window.open for production
+            window.open(whatsappUrl, '_blank');
+            
+            cart = {};
+            saveCart();
+            updateCartUI();
+            
+            document.getElementById('cart-checkout-form').reset();
+            checkOtherOption('cart-payment-method', 'cart-payment-other-field');
+            checkOtherOption('cart-delivery-zone', 'cart-delivery-other-field');
+            
+            showPage('home');
+        }
+
+    </script>
+</body>
+</html>
+
+
